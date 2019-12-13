@@ -1,12 +1,19 @@
 #include <cstdio>
 #include "client.h"
+#include "feeder.h"
 
-int main() {
-	client* cl = new client("192.168.1.158", "1182");
-	int res = cl->_connect();
-	printf("Res: %d\n", res);
-	printf("Hello world!\n");
-	
+
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		return -1;
+	}
+	feeder* f = new feeder(argv[1], "1182");
+	int res = f->connect();
+	printf("%d\n", res);
+	f->start_feeder_thread();
+	//Keeping it open
+	while (true) {}
+
 	return 0;
-	
+
 }

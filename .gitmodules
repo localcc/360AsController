@@ -1,0 +1,3 @@
+[submodule "WindowsDriver/Libs/ViGEm"]
+	path = WindowsDriver/Libs/ViGEm
+	url = https://github.com/ViGEm/ViGEmClient.git
