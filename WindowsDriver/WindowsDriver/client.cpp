@@ -1,4 +1,5 @@
 #include "client.h"
+#include <cstdio>
 
 client::client(const char* hostname, const char* port) {
 	WSADATA wsaData;
@@ -29,12 +30,12 @@ client::~client() {
 	ptr = NULL;
 }
 
-int client::_read(void* data, int len) {
-	return send(sock_fd, reinterpret_cast<const char*>(data), len, 0);
+int client::_read(char* data, int len) {
+	return recv(sock_fd, data, len, 0);
 }
 
-int client::_write(void* data, int len) {
-	return recv(sock_fd, reinterpret_cast<char*>(data), len, 0);
+int client::_write(char* data, int len) {
+	return send(sock_fd, data, len, 0);
 }
 
 int client::_connect() {
