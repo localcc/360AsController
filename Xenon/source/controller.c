@@ -8,7 +8,7 @@ void serialize_controller_data(struct controller_data_s controller_data, unsigne
 	//Assuming 14 bytes were allocated
 	//Zeroing out
 	memset(data_to_send, 0, 14);
-	printf("button a: %d\n", controller_data.a);
+	
 	data_to_send[0] = ((controller_data.a) |
 			    (controller_data.x << GB_OFF_X) |
 			    (controller_data.b << GB_OFF_B) |
@@ -53,4 +53,8 @@ void read_controller_data(unsigned char* data_to_send) {
 
 	}
 	usb_do_poll();
+}
+
+void write_controller_data(unsigned char* data) {
+	set_controller_rumble(0, data[0], data[1]);	
 }

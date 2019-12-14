@@ -23,18 +23,33 @@ void reply_controller_data(struct tcp_pcb* pcb) {
 	tcp_sent(pcb, NULL); // no cb
 }
 
+void accept_controller_data(unsigned char* buffer) {
+
+	write_controller_data(buffer);
+}
+
+bool cb_mode = false;
 err_t server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
 
 	if(err == ERR_OK && p != NULL){
 		//Inform about data being taken
 		tcp_recved(pcb, p->tot_len);
-		unsigned char command = ((unsigned char*)p->payload)[0];
 		
-		if(command == 1) {
-			reply_controller_data(pcb);
-		}else if(command == 2) {
-			close_conn(pcb);
+		if(!cb_mode) {
+			unsigned char command = ((unsigned char*)p->payload)[0];
+		
+			if(command == 1) {
+				reply_controller_data(pcb);
+			}else if(command == 2) {
+				close_conn(pcb);
+			}else if(command == 3) {
+				cb_mode = true;
+			}
+		}else {
+			accept_controller_data((unsigned char*)p->payload);
+			cb_mode = false;
 		}
+
 		pbuf_free(p);
 
 		tcp_sent(pcb, NULL);
