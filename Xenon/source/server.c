@@ -16,7 +16,6 @@ void close_conn(struct tcp_pcb *pcb) {
 
 
 void reply_controller_data(struct tcp_pcb* pcb) {
-	//TODO: actually reply something!
 	unsigned char* buffer = (unsigned char*)malloc(14); // 14 bytes for controller data, see controller.c for more info
 	read_controller_data(buffer);
 	tcp_write(pcb, buffer, 14, 0);
@@ -34,6 +33,7 @@ err_t server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
 		//Inform about data being taken
 		tcp_recved(pcb, p->tot_len);
 	
+
 		unsigned char command = ((unsigned char*)p->payload)[0];
 		if(command == 1) {
 			reply_controller_data(pcb);
@@ -42,6 +42,7 @@ err_t server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
 		}else if(command == 3) {
 			accept_controller_data((unsigned char*)p->payload + 1);
 		}
+
 		pbuf_free(p);
 
 		tcp_sent(pcb, NULL);
