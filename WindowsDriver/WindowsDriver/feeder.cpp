@@ -1,11 +1,20 @@
 #include "feeder.h"
 #include "controller_conversion.h"
 
+
+
+static char get[1] = { 1 };
+static char poweroff[1] = { 2 };
+static char cb[1] = { 3 };
+
+feeder* feeder::c_instance = nullptr;
+
 feeder::feeder(const char* hostname, const char* port) {
 	this->tcp_client = new client(hostname, port);
 	this->driver_client = vigem_alloc();
 	this->driver_target = vigem_target_x360_alloc();
 	connected = false;
+	c_instance = this;
 }
 
 feeder::~feeder() {
@@ -39,19 +48,44 @@ void feeder::stop_feeder_thread() {
 	this->sender_thread.join();
 }
 
+void feeder::controller_callback(PVIGEM_CLIENT Client,
+	PVIGEM_TARGET Target,
+	UCHAR LeftMotor,
+	UCHAR RightMotor,
+	UCHAR LedNumber) {
+	char data[3] = { cb[0], LeftMotor, RightMotor };
+	feeder::GetInstance()->tcp_client->_write(data, 3);
+}
+
+
+
+
+/*
+	Commands:
+	1 -		get, read 14 bytes after
+	2 -		poweroff
+	3 -		cb, write 2 bytes after, 1st byte - left rumble, 2nd - right rumble
+*/
+
+
 void feeder::feed() {
-	char command[1] = { 1 }; // this is get command
+	
 	char* buf = (char*)malloc(14); // buffer for data
+	char data[2] = { 0, 0 };
 	while (connected) {
+		
 		//Do work
-		this->tcp_client->_write(command, 1); // asking for controller data
+		this->tcp_client->_write(get, 1); // asking for controller data
 		memset(buf, 0, 14);
 		this->tcp_client->_read(buf, 14); // receiving it
+		vigem_target_x360_register_notification(this->driver_client, this->driver_target,
+			reinterpret_cast<PFN_VIGEM_X360_NOTIFICATION>(&feeder::controller_callback));
 		
 		vigem_target_x360_update(this->driver_client, this->driver_target, controller_conversion::data_to_report(buf));
+		
 	}
-	command[0] = 2; // shutdown
-	this->tcp_client->_write(command, 1);
+	
+	this->tcp_client->_write(poweroff, 1);
 }
 
 void feeder::disconnect() {
