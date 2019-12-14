@@ -21,6 +21,6 @@
 struct controller_data_s prev_controller_data;
 void serialize_controller_data(struct controller_data_s controller_data, unsigned char* data_to_send);
 void read_controller_data(unsigned char* data_to_send);
-
+void write_controller_data(unsigned char* data);
 #endif
 
