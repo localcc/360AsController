@@ -31,11 +31,17 @@ client::~client() {
 }
 
 int client::_read(char* data, int len) {
-	return recv(sock_fd, data, len, 0);
+	queue_mutex.lock();
+	int amount = recv(sock_fd, data, len, 0);
+	queue_mutex.unlock();
+	return amount;
 }
 
 int client::_write(char* data, int len) {
-	return send(sock_fd, data, len, 0);
+	queue_mutex.lock();
+	int amount = send(sock_fd, data, len, 0);
+	queue_mutex.unlock();
+	return amount;
 }
 
 int client::_connect() {

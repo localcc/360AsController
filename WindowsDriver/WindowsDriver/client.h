@@ -2,6 +2,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <mutex>
 
 
 class client {
@@ -17,4 +18,5 @@ public:
 private:
 	SOCKET sock_fd;
 	struct addrinfo *result, *ptr, hints;
+	std::mutex queue_mutex;
 };
