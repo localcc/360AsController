@@ -5,7 +5,7 @@
 
 class feeder {
 public:
-	feeder(const char* hostname, const char* port);
+	feeder(const char* hostname, int port);
 	~feeder();
 
 	static feeder* GetInstance() { return c_instance; }
@@ -27,6 +27,6 @@ private:
 	PVIGEM_CLIENT driver_client;
 	PVIGEM_TARGET driver_target;
 	std::thread sender_thread;
-	client* tcp_client;
+	client* udp_client;
 	bool connected;
 };
