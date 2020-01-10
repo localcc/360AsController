@@ -9,8 +9,8 @@ static char cb[1] = { 3 };
 
 feeder* feeder::c_instance = nullptr;
 
-feeder::feeder(const char* hostname, const char* port) {
-	this->tcp_client = new client(hostname, port);
+feeder::feeder(const char* hostname, int port) {
+	this->udp_client = new client(hostname, port);
 	this->driver_client = vigem_alloc();
 	this->driver_target = vigem_target_x360_alloc();
 	connected = false;
@@ -18,9 +18,9 @@ feeder::feeder(const char* hostname, const char* port) {
 }
 
 feeder::~feeder() {
-	this->tcp_client->disconnect();
+	this->udp_client->close_socket();
 	connected = false;
-	this->tcp_client->~client();
+	this->udp_client->~client();
 	vigem_target_remove(this->driver_client, this->driver_target);
 	vigem_disconnect(this->driver_client);
 	vigem_target_free(this->driver_target);
@@ -29,8 +29,6 @@ feeder::~feeder() {
 }
 
 int feeder::connect() {
-	int res = this->tcp_client->_connect();
-	if (res != 0) return res;
 
 	if (vigem_connect(this->driver_client) != VIGEM_ERROR_NONE) return -80;
 	if (vigem_target_add(this->driver_client, this->driver_target) != VIGEM_ERROR_NONE) return -81;
@@ -54,7 +52,7 @@ void feeder::controller_callback(PVIGEM_CLIENT Client,
 	UCHAR RightMotor,
 	UCHAR LedNumber) {
 	char data[3] = { cb[0], LeftMotor, RightMotor };
-	feeder::GetInstance()->tcp_client->_write(data, 3);
+	feeder::GetInstance()->udp_client->client_write(data, 3);
 }
 
 
@@ -75,9 +73,9 @@ void feeder::feed() {
 	while (connected) {
 		
 		//Do work
-		this->tcp_client->_write(get, 1); // asking for controller data
+		this->udp_client->client_write(get, 1); // asking for controller data
 		memset(buf, 0, 14);
-		this->tcp_client->_read(buf, 14); // receiving it
+		this->udp_client->client_read(buf, 14); // receiving it
 		vigem_target_x360_register_notification(this->driver_client, this->driver_target,
 			reinterpret_cast<PFN_VIGEM_X360_NOTIFICATION>(&feeder::controller_callback));
 		
@@ -85,10 +83,10 @@ void feeder::feed() {
 		
 	}
 	
-	this->tcp_client->_write(poweroff, 1);
+	this->udp_client->client_write(poweroff, 1);
 }
 
 void feeder::disconnect() {
-	this->tcp_client->disconnect();
+	this->udp_client->close_socket();
 }
 
