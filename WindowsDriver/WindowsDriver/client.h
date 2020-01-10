@@ -1,22 +1,25 @@
-#pragma once
+//
+// Created by local on 03.01.2020.
+//
 
-#include <winsock2.h>
+
+#ifndef UDPCLIENT_CLIENT_H
+#define UDPCLIENT_CLIENT_H
 #include <ws2tcpip.h>
-#include <mutex>
+
 
 
 class client {
 public:
-	client(const char* hostname, const char* port);
-	~client();
-
-	int _connect();
-	void disconnect();
-
-	int _read(char* data, int len);
-	int _write(char* data, int len);
+    client(const char* hostname, int port);
+    ~client();
+    int client_read(char* arr, int amount);
+    int client_write(char* arr, int amount);
+    void close_socket();
 private:
-	SOCKET sock_fd;
-	struct addrinfo *result, *ptr, hints;
-	std::mutex queue_mutex;
+    SOCKET sock_fd;
+    sockaddr_in address;
 };
+
+
+#endif //UDPCLIENT_CLIENT_H

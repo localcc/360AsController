@@ -1,68 +1,45 @@
+//
+// Created by local on 03.01.2020.
+//
+
 #include "client.h"
 #include <cstdio>
 
-client::client(const char* hostname, const char* port) {
-	WSADATA wsaData;
-	sock_fd = INVALID_SOCKET;
+client::client(const char* hostname, int port) {
+    int res = 0;
+    WSAData data;
+    res = WSAStartup(MAKEWORD(2, 2), &data);
+    if (res != 0)
+        this->~client();
+    sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock_fd == INVALID_SOCKET)
+        this->~client();
 
-	result = NULL;
-	ptr = NULL;
-	int res = 0;
-	res = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (res != 0) {
-		this->~client();
-	}
+    address.sin_family = AF_INET;
 
-	ZeroMemory(&hints, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-
-	res = getaddrinfo(hostname, port, &hints, &result);
-	if (res != 0) {
-		WSACleanup();
-		this->~client();
-	}
+    res = InetPton(AF_INET, hostname, &address.sin_addr.s_addr);
+    if (res < 0)
+        this->~client();
+    address.sin_port = htons(port);
 }
 
 client::~client() {
-	result = NULL;
-	ptr = NULL;
+    closesocket(sock_fd);
 }
 
-int client::_read(char* data, int len) {
-	queue_mutex.lock();
-	int amount = recv(sock_fd, data, len, 0);
-	queue_mutex.unlock();
-	return amount;
+
+int client::client_write(char* arr, int amount) {
+    return sendto(sock_fd, arr, amount, 0, reinterpret_cast<sockaddr*>(&address), sizeof(address));
 }
 
-int client::_write(char* data, int len) {
-	queue_mutex.lock();
-	int amount = send(sock_fd, data, len, 0);
-	queue_mutex.unlock();
-	return amount;
+int client::client_read(char* arr, int amount) {
+    sockaddr_in from;
+    int size = sizeof(from);
+    int ret = recvfrom(sock_fd, arr, amount, 0, reinterpret_cast<SOCKADDR*>(&from), &size);
+
+    return ret;
 }
 
-int client::_connect() {
-	sock_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if (sock_fd == INVALID_SOCKET) {
-		WSACleanup();
-		return INVALID_SOCKET;
-	}
-	int res = 0;
-	res = connect(sock_fd, result->ai_addr, (int)result->ai_addrlen);
-	if (res == SOCKET_ERROR) {
-		closesocket(sock_fd);
-		sock_fd = INVALID_SOCKET;
-		return res;
-	}
-	freeaddrinfo(result);
-	return 0;
-
+void client::close_socket() {
+    closesocket(sock_fd);
 }
-
-void client::disconnect() {
-	shutdown(sock_fd, 0);
-}
-
