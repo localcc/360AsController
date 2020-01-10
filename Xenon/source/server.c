@@ -1,84 +1,38 @@
 #include "server.h"
 #include "controller.h"
 
-void conn_err(void *arg, err_t err) {
-	printf("error!\n");
-}
-
-void close_conn(struct tcp_pcb *pcb) {
-	tcp_arg(pcb, NULL);
-	tcp_sent(pcb, NULL);
-	tcp_recv(pcb, NULL);
-	tcp_poll(pcb, NULL, 0);
-	tcp_err(pcb, NULL);
-	tcp_close(pcb);
-}
 
 
-void reply_controller_data(struct tcp_pcb* pcb) {
-	unsigned char* buffer = (unsigned char*)malloc(14); // 14 bytes for controller data, see controller.c for more info
-	read_controller_data(buffer);
-	tcp_write(pcb, buffer, 14, 0);
-	tcp_sent(pcb, NULL); // no cb
-}
 
-void accept_controller_data(unsigned char* buffer) {
+void udp_server_recv(void *arg, struct udp_pcb *pcb, struct pbuf* p, struct ip_addr *addr, u16_t port) {
 
-	write_controller_data(buffer);
-}
-
-err_t server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
-
-	if(err == ERR_OK && p != NULL){
-		//Inform about data being taken
-		tcp_recved(pcb, p->tot_len);
-	
-
-		unsigned char command = ((unsigned char*)p->payload)[0];
-		if(command == 1) {
-			reply_controller_data(pcb);
-		}else if(command == 2) {
-			close_conn(pcb);
-		}else if(command == 3) {
-			accept_controller_data((unsigned char*)p->payload + 1);
-		}
-
-		pbuf_free(p);
-
-		tcp_sent(pcb, NULL);
-
-	}else if(err == ERR_OK && p == NULL){
-		close_conn(pcb);
-	}else {
-		return err;
-	}
-	return ERR_OK;
+    LWIP_UNUSED_ARG(arg);
+    if(p == NULL)
+        return;
+    unsigned char* data = (unsigned char*)p->payload;
+    unsigned char command = data[0];
+    pbuf_free(p);
+    if(command == 1) {
+        unsigned char* cdata_buffer = (unsigned char*)malloc(14);
+        read_controller_data(cdata_buffer);
+        struct pbuf* t_pbuf = pbuf_alloc(PBUF_TRANSPORT, 14, PBUF_REF);
+        t_pbuf->payload = cdata_buffer;
+        t_pbuf->len = t_pbuf->tot_len = 14;
+        udp_sendto(pcb, t_pbuf, addr, port);
+        pbuf_free(t_pbuf);
+        free(cdata_buffer);
+    }else if(command == 2) {
+        //TODO: turn console off
+    }else if(command == 3) {
+        write_controller_data(data + 1);
+    }
 
 }
 
-err_t server_accept(void *arg, struct tcp_pcb *pcb, err_t err) {		
-	LWIP_UNUSED_ARG(arg);
-	LWIP_UNUSED_ARG(err);
-	tcp_setprio(pcb, TCP_PRIO_MIN);
-
-	tcp_arg(pcb, NULL);
-	tcp_recv(pcb, server_recv);
-	tcp_err(pcb, conn_err);
-	tcp_poll(pcb, NULL, 0); // no polling
-	return ERR_OK;
-}
 
 void start_server(void) {
 
-	listen_pcb = tcp_new();
-	tcp_bind(listen_pcb, IP_ADDR_ANY, 1182);
-
-	listen_pcb = tcp_listen(listen_pcb);
-	tcp_accept(listen_pcb, server_accept);
+    upcb = udp_new();
+    udp_bind(upcb, IP_ADDR_ANY, 1182);
+    udp_recv(upcb, udp_server_recv, NULL);
 }
-
-
-
-
-
-
