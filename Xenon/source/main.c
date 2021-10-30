@@ -17,15 +17,14 @@ void mainInit() {
 	usb_init();
 	usb_do_poll();
 }
+
 int main() {
 	mainInit();
 	start_server();
 	printf("Waiting for clients\n");
- 	for(;;) {
+	for(;;) {
 		network_poll();
 		usb_do_poll();
 	}
 	return 0;
-
-
 }

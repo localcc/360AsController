@@ -1,4 +1,4 @@
-#include <cstdio>
+#include <iostream>
 #include "client.h"
 #include "feeder.h"
 
@@ -10,7 +10,10 @@ int main(int argc, char* argv[]) {
 	}
 	feeder* f = new feeder(argv[1], 1182);
 	int res = f->connect();
-	printf("%d\n", res);
+	if (res == 1) {
+		std::cout << "WARNING: Failed to setup rumble callback, you will NOT have rumble" << std::endl;
+	}
+	std::cout << res << std::endl;
 	f->start_feeder_thread();
 	//Keeping it open
 	while (true) {}

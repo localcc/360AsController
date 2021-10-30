@@ -1,14 +1,14 @@
 #pragma once
 #include "client.h"
 #include "ViGEm/Client.h"
+#include <stdexcept>
 #include <thread>
+#include <chrono>
 
 class feeder {
 public:
 	feeder(const char* hostname, int port);
 	~feeder();
-
-	static feeder* GetInstance() { return c_instance; }
 
 	int connect();
 	void disconnect();
@@ -18,15 +18,17 @@ public:
 		PVIGEM_TARGET Target,
 		UCHAR LargeMotor,
 		UCHAR SmallMotor,
-		UCHAR LedNumber);
+		UCHAR LedNumber,
+		LPVOID Instance);
 
 private:
+	UCHAR left_motor;
+	UCHAR right_motor;
 
 	void feed();
-	static feeder* c_instance;
 	PVIGEM_CLIENT driver_client;
 	PVIGEM_TARGET driver_target;
 	std::thread sender_thread;
-	client* udp_client;
+	client udp_client;
 	bool connected;
 };
