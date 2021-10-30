@@ -1,6 +1,16 @@
 #include "feeder.h"
 #include "controller_conversion.h"
 
+
+/*
+	Commands:
+	1 -		get, read 14 bytes after
+	2 -		poweroff
+	3 -		cb, write 2 bytes after, 1st byte - left rumble, 2nd - right rumble
+*/
+static uint8_t get[1] = { 1 };
+static uint8_t poweroff[1] = { 2 };
+static uint8_t cb = 3;
 feeder::feeder(const char* hostname, int port) : udp_client(hostname, port) {
 	this->driver_client = vigem_alloc();
 	if (this->driver_client == nullptr) {
@@ -60,19 +70,6 @@ void feeder::controller_callback(PVIGEM_CLIENT Client,
 	uint8_t data[3] = { cb, LeftMotor, RightMotor };
 	f->udp_client.client_write(data, 3);
 }
-
-
-
-
-/*
-	Commands:
-	1 -		get, read 14 bytes after
-	2 -		poweroff
-	3 -		cb, write 2 bytes after, 1st byte - left rumble, 2nd - right rumble
-*/
-static uint8_t get[1] = { 1 };
-static uint8_t poweroff[1] = { 2 };
-static uint8_t cb = 3;
 
 void feeder::feed() {
 	uint8_t* buf = new uint8_t[14];
